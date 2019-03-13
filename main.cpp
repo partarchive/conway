@@ -66,6 +66,10 @@ void renderWindow(Game *game)
 
     glBindVertexArray(game->VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 3, 3);
+    glDrawArrays(GL_TRIANGLES, 6, 3);
+    glDrawArrays(GL_TRIANGLES, 9, 3);
+    glDrawArrays(GL_TRIANGLES, 12, 3);
 }
 
 void setup_shaders(Game *game)
@@ -161,14 +165,32 @@ int main()
     if (init_gl(&game) != 0)
         return -1;
 
+    setup_shaders(&game);
+
     glGenVertexArrays(1, &game.VAO);
 
     glBindVertexArray(game.VAO);
 
     float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f};
+        -0.1f, -0.1f, 0.0f,
+        0.1f, -0.1f, 0.0f,
+        0.0f, 0.1f, 0.0f,
+
+        -0.8f, -0.8f, 0.0f,
+        -0.4f, -0.8f, 0.0f,
+        -0.4f, 0.0f, 0.0f,
+
+        0.8f, 0.8f, 0.0f,
+        0.4f, 0.8f, 0.0f,
+        0.4f, 0.0f, 0.0f,
+
+        0.8f, -0.8f, 0.0f,
+        0.4f, -0.8f, 0.0f,
+        0.4f, 0.0f, 0.0f,
+
+        -0.8f, 0.8f, 0.0f,
+        -0.4f, 0.8f, 0.0f,
+        -0.4f, 0.0f, 0.0f};
 
     unsigned int VBO;
     glGenBuffers(1, &VBO);
@@ -177,8 +199,6 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
-
-    setup_shaders(&game);
 
     while (!glfwWindowShouldClose(game.window))
     {
