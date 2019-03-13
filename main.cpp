@@ -79,7 +79,9 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(800, 600, "conway", NULL, NULL);
+    Game game = Game{.X = 800, .Y = 600, .a = 1};
+
+    GLFWwindow *window = glfwCreateWindow(game.X, game.Y, "conway", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -96,7 +98,6 @@ int main()
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    Game game = Game{.X = 800, .Y = 600, .a = 1};
     glViewport(0, 0, game.X, game.Y);
 
     // this is a stupid workaround around a bug in Mojave. Figure out why this sucks'
