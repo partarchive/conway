@@ -27,6 +27,8 @@ struct Game
     unsigned int shaderProgram;
     unsigned int VAO;
 
+    GLFWwindow *window;
+
     int X;
     int Y;
 
@@ -41,13 +43,13 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow *window, Game *game)
+void processInput(Game *game)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(game->window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(game->window, true);
 
     double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
+    glfwGetCursorPos(game->window, &xpos, &ypos);
 
     game->r = std::clamp(xpos / game->X, 0.0, 1.0);
     game->g = std::clamp(ypos / game->Y, 0.0, 1.0);
@@ -56,16 +58,11 @@ void processInput(GLFWwindow *window, Game *game)
     // std::cout << "r: " << game->r << " g: " << game->g << " b: " << game->b << std::endl;
 }
 
-void clearWindow(GLFWwindow *window, Game *game)
-{
-    glClearColor(game->r, game->g, 0.4f, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void renderWindow(GLFWwindow *window, Game *game)
+void renderWindow(Game *game)
 {
     glUseProgram(game->shaderProgram);
-    clearWindow(window, game);
+    glClearColor(game->r, game->g, 0.4f, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glBindVertexArray(game->VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -121,7 +118,7 @@ void setup_shaders(Game *game)
     glDeleteShader(fragmentShader);
 }
 
-int main()
+int init_gl(Game *game)
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -129,16 +126,14 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    Game game = Game{.X = 800, .Y = 600, .a = 1};
-
-    GLFWwindow *window = glfwCreateWindow(game.X, game.Y, "conway", NULL, NULL);
-    if (window == NULL)
+    game->window = glfwCreateWindow(game->X, game->Y, "conway", NULL, NULL);
+    if (game->window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(game->window);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -146,15 +141,25 @@ int main()
         return -1;
     }
 
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(game->window, framebuffer_size_callback);
 
-    glViewport(0, 0, game.X, game.Y);
+    glViewport(0, 0, game->X, game->Y);
 
     // this is a stupid workaround around a bug in Mojave. Figure out why this sucks'
     // https://stackoverflow.com/questions/52509427/mac-mojave-opengl
-    glfwSetWindowSize(window, game.X - 1, game.Y);
+    glfwSetWindowSize(game->window, game->X - 1, game->Y);
     glfwPollEvents();
-    glfwSetWindowSize(window, game.X, game.Y);
+    glfwSetWindowSize(game->window, game->X, game->Y);
+
+    return 0;
+}
+
+int main()
+{
+    Game game = Game{.X = 800, .Y = 600, .a = 1};
+
+    if (init_gl(&game) != 0)
+        return -1;
 
     glGenVertexArrays(1, &game.VAO);
 
@@ -175,13 +180,13 @@ int main()
 
     setup_shaders(&game);
 
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(game.window))
     {
-        processInput(window, &game);
+        processInput(&game);
 
-        renderWindow(window, &game);
+        renderWindow(&game);
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(game.window);
         glfwPollEvents();
     }
 
