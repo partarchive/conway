@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 
 #include "src/glad.c"
@@ -46,7 +47,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-void setup_shaders(Game *game)
+void setup_shaders(Game &game)
 {
     // create shaders
     unsigned int vertexShader;
@@ -78,27 +79,27 @@ void setup_shaders(Game *game)
     }
 
     // create shader program and link shaders with it
-    game->shaderProgram = glCreateProgram();
-    glAttachShader(game->shaderProgram, vertexShader);
-    glAttachShader(game->shaderProgram, fragmentShader);
-    glLinkProgram(game->shaderProgram);
+    game.shaderProgram = glCreateProgram();
+    glAttachShader(game.shaderProgram, vertexShader);
+    glAttachShader(game.shaderProgram, fragmentShader);
+    glLinkProgram(game.shaderProgram);
 
-    glGetProgramiv(game->shaderProgram, GL_LINK_STATUS, &success);
+    glGetProgramiv(game.shaderProgram, GL_LINK_STATUS, &success);
     if (!success)
     {
-        glGetProgramInfoLog(game->shaderProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(game.shaderProgram, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
                   << infoLog << std::endl;
     }
 
-    game->color_location = glGetUniformLocation(game->shaderProgram, "ourColor");
+    game.color_location = glGetUniformLocation(game.shaderProgram, "ourColor");
 
     // delete shaders once they are linked, we don't need them anymore
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 }
 
-int init_gl(Game *game)
+int init_gl(Game &game)
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -106,14 +107,14 @@ int init_gl(Game *game)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    game->window = glfwCreateWindow(game->X, game->Y, "conway", NULL, NULL);
-    if (game->window == NULL)
+    game.window = glfwCreateWindow(game.X, game.Y, "conway", NULL, NULL);
+    if (game.window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(game->window);
+    glfwMakeContextCurrent(game.window);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -121,61 +122,61 @@ int init_gl(Game *game)
         return -1;
     }
 
-    glfwSetFramebufferSizeCallback(game->window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(game.window, framebuffer_size_callback);
 
-    glViewport(0, 0, game->X, game->Y);
+    glViewport(0, 0, game.X, game.Y);
 
     // this is a stupid workaround around a bug in Mojave. Figure out why this sucks'
     // https://stackoverflow.com/questions/52509427/mac-mojave-opengl
-    glfwSetWindowSize(game->window, game->X - 1, game->Y);
+    glfwSetWindowSize(game.window, game.X - 1, game.Y);
     glfwPollEvents();
-    glfwSetWindowSize(game->window, game->X, game->Y);
+    glfwSetWindowSize(game.window, game.X, game.Y);
 
     return 0;
 }
 
-void processInput(Game *game)
+void processInput(Game &game)
 {
-    if (glfwGetKey(game->window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(game->window, true);
+    if (glfwGetKey(game.window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(game.window, true);
 
     double xpos, ypos;
-    glfwGetCursorPos(game->window, &xpos, &ypos);
+    glfwGetCursorPos(game.window, &xpos, &ypos);
 
-    game->r = std::clamp(xpos / game->X, 0.0, 1.0);
-    game->g = std::clamp(ypos / game->Y, 0.0, 1.0);
+    game.r = std::clamp(xpos / game.X, 0.0, 1.0);
+    game.g = std::clamp(ypos / game.Y, 0.0, 1.0);
 
     // std::cout << "xpos: " << xpos << " ypos: " << ypos << std::endl;
     // std::cout << "r: " << game->r << " g: " << game->g << " b: " << game->b << std::endl;
 }
 
-void renderWindow(Game *game)
+void renderWindow(Game &game)
 {
-    glUseProgram(game->shaderProgram);
+    glUseProgram(game.shaderProgram);
     float timeValue = glfwGetTime();
     float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
 
     glClearColor(0.8f, greenValue, 0.4f, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glBindVertexArray(game->VAO);
+    glBindVertexArray(game.VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glDrawArrays(GL_TRIANGLES, 3, 3);
     glDrawArrays(GL_TRIANGLES, 6, 3);
     glDrawArrays(GL_TRIANGLES, 9, 3);
     glDrawArrays(GL_TRIANGLES, 12, 3);
 
-    glUniform4f(game->color_location, game->r, game->g, 0.0f, 0.0f);
+    glUniform4f(game.color_location, game.r, game.g, 0.0f, 0.0f);
 }
 
 int main()
 {
     Game game = Game{.X = 800, .Y = 600, .a = 1};
 
-    if (init_gl(&game) != 0)
+    if (init_gl(game) != 0)
         return -1;
 
-    setup_shaders(&game);
+    setup_shaders(game);
 
     glGenVertexArrays(1, &game.VAO);
 
@@ -212,9 +213,9 @@ int main()
 
     while (!glfwWindowShouldClose(game.window))
     {
-        processInput(&game);
+        processInput(game);
 
-        renderWindow(&game);
+        renderWindow(game);
 
         glfwSwapBuffers(game.window);
         glfwPollEvents();
