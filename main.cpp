@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <cmath>
 #include <iostream>
 #include <algorithm>
 
@@ -151,7 +152,10 @@ void processInput(Game *game)
 void renderWindow(Game *game)
 {
     glUseProgram(game->shaderProgram);
-    glClearColor(0.8f, 0.0f, 0.4f, 1);
+    float timeValue = glfwGetTime();
+    float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+
+    glClearColor(0.8f, greenValue, 0.4f, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glBindVertexArray(game->VAO);
