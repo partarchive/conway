@@ -17,15 +17,17 @@ const char *vertex_shader =
 const char *fragment_shader =
     "#version 400 core\n"
     "out vec4 FragColor;"
+    "uniform vec4 ourColor;"
     "void main()"
     "{"
-    "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);"
+    "    FragColor = ourColor;"
     "}";
 
 struct Game
 {
     unsigned int shaderProgram;
     unsigned int VAO;
+    unsigned int color_location;
 
     GLFWwindow *window;
 
@@ -88,6 +90,8 @@ void setup_shaders(Game *game)
                   << infoLog << std::endl;
     }
 
+    game->color_location = glGetUniformLocation(game->shaderProgram, "ourColor");
+
     // delete shaders once they are linked, we don't need them anymore
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -147,7 +151,7 @@ void processInput(Game *game)
 void renderWindow(Game *game)
 {
     glUseProgram(game->shaderProgram);
-    glClearColor(game->r, game->g, 0.4f, 1);
+    glClearColor(0.8f, 0.0f, 0.4f, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glBindVertexArray(game->VAO);
@@ -156,6 +160,8 @@ void renderWindow(Game *game)
     glDrawArrays(GL_TRIANGLES, 6, 3);
     glDrawArrays(GL_TRIANGLES, 9, 3);
     glDrawArrays(GL_TRIANGLES, 12, 3);
+
+    glUniform4f(game->color_location, game->r, game->g, 0.0f, 0.0f);
 }
 
 int main()
