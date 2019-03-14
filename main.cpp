@@ -8,22 +8,7 @@
 
 #include "src/glad.c"
 
-const char *vertex_shader =
-    "#version 400 core\n"
-    "layout (location = 0) in vec3 aPos;"
-    "void main()"
-    "{"
-    "    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);"
-    "}";
-
-const char *fragment_shader =
-    "#version 400 core\n"
-    "out vec4 FragColor;"
-    "uniform vec4 ourColor;"
-    "void main()"
-    "{"
-    "    FragColor = ourColor;"
-    "}";
+const int MAX_INFO_LOG = 512;
 
 struct Game
 {
@@ -47,47 +32,67 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-void setup_shaders(Game &game)
+int file_length(std::ifstream &file)
 {
-    // create shaders
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertex_shader, NULL);
-    glCompileShader(vertexShader);
+    file.seekg(0, file.end);
+    int length = file.tellg();
+    file.seekg(0, file.beg);
+    return length;
+}
+
+unsigned int load_shader(Game &game, char const *filename, unsigned int shader_type)
+{
+    std::ifstream file(filename, std::ifstream::in);
+
+    int length = file_length(file);
+
+    char *buffer = new char[length];
+    file.read(buffer, length);
+    file.close();
+
+    unsigned int shader;
+    shader = glCreateShader(shader_type);
+    glShaderSource(shader, 1, &buffer, &length);
+    glCompileShader(shader);
 
     int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    char infoLog[MAX_INFO_LOG];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        glGetShaderInfoLog(shader, MAX_INFO_LOG, NULL, infoLog);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
                   << infoLog << std::endl;
+        return -1;
     }
 
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragment_shader, NULL);
-    glCompileShader(fragmentShader);
+    delete[] buffer;
 
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-                  << infoLog << std::endl;
-    }
+    return shader;
+}
 
-    // create shader program and link shaders with it
+int setup_shaders(Game &game)
+{
+    // create shaders
+    unsigned int vertex_shader = load_shader(game, "shader/vertex.glsl", GL_VERTEX_SHADER);
+    if (vertex_shader < 0)
+        return vertex_shader;
+
+    unsigned int fragment_shader = load_shader(game, "shader/fragment.glsl", GL_FRAGMENT_SHADER);
+    if (fragment_shader < 0)
+        return fragment_shader;
+
     game.shaderProgram = glCreateProgram();
-    glAttachShader(game.shaderProgram, vertexShader);
-    glAttachShader(game.shaderProgram, fragmentShader);
+    glAttachShader(game.shaderProgram, vertex_shader);
+    glAttachShader(game.shaderProgram, fragment_shader);
     glLinkProgram(game.shaderProgram);
 
+    int success;
+    char infoLog[MAX_INFO_LOG];
     glGetProgramiv(game.shaderProgram, GL_LINK_STATUS, &success);
     if (!success)
     {
-        glGetProgramInfoLog(game.shaderProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(game.shaderProgram, MAX_INFO_LOG, NULL, infoLog);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
                   << infoLog << std::endl;
     }
@@ -95,8 +100,10 @@ void setup_shaders(Game &game)
     game.color_location = glGetUniformLocation(game.shaderProgram, "ourColor");
 
     // delete shaders once they are linked, we don't need them anymore
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+
+    return 0;
 }
 
 int init_gl(Game &game)
@@ -173,10 +180,11 @@ int main()
 {
     Game game = Game{.X = 800, .Y = 600, .a = 1};
 
-    if (init_gl(game) != 0)
-        return -1;
+    if (int res = init_gl(game) < 0)
+        return res;
 
-    setup_shaders(game);
+    if (int res = setup_shaders(game) < 0)
+        return res;
 
     glGenVertexArrays(1, &game.VAO);
 
