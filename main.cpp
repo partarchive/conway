@@ -25,6 +25,16 @@ struct Game
 
     GLFWwindow *window;
 
+    float accum_time;
+
+    float move_rate;
+
+    struct {
+        float previous;
+        float now;
+        float delta;
+    } time;
+
     int X;
     int Y;
 
@@ -180,7 +190,8 @@ void renderWindow(Game &game)
     // glDrawArrays(GL_TRIANGLES, 24, 3);
 
     glUniform4f(game.color_location, game.r, game.g, 0.0f, 0.0f);
-    glUniform3f(game.offset, (sin(glfwGetTime()) / 2.0f), 0.0f, 0.0f);
+    game.accum_time += game.time.delta;
+    glUniform3f(game.offset, (sin(game.accum_time * game.move_rate) / 2.0f) , 0.0f, 0.0f);
 }
 
 int main()
@@ -216,14 +227,43 @@ int main()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    // Setup Platform/Renderer bindings
+    ImGui_ImplGlfw_InitForOpenGL(game.window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
+    game.time.previous = glfwGetTime();
     while (!glfwWindowShouldClose(game.window))
     {
+        // common part, do this only once
+        game.time.now = glfwGetTime();
+        game.time.delta = game.time.now - game.time.previous;
+        game.time.previous = game.time.now;
+
         processInput(game);
 
         renderWindow(game);
 
-        glfwSwapBuffers(game.window);
         glfwPollEvents();
+
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Begin("Triangle Shit");
+
+            ImGui::SliderFloat("move rate", &game.move_rate, 0.0f, 5.0f, "%.3f");
+
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(game.window);
     }
 
     return 0;

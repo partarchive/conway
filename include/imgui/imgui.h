@@ -933,7 +933,8 @@ enum ImGuiKey_
     ImGuiKey_Space,
     ImGuiKey_Enter,
     ImGuiKey_Escape,
-    ImGuiKey_A,         // for text edit CTRL+A: select all
+    ImGuiKey_A,         // for text edit CTRL+A: select all (osx line start)
+    ImGuiKey_E,         // for text edit CTRL+E: osx line end
     ImGuiKey_C,         // for text edit CTRL+C: copy
     ImGuiKey_V,         // for text edit CTRL+V: paste
     ImGuiKey_X,         // for text edit CTRL+X: cut
